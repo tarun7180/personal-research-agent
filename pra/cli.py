@@ -1,16 +1,55 @@
+from __future__ import annotations
+
+import logging
+import os
+import re
+from datetime import datetime
+from pathlib import Path
+
+import anthropic
 import typer
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.markdown import Markdown
 
-from pra.orchestrator import run
+from pra.llm.anthropic_client import AnthropicClient
+from pra.orchestrator import DEPTH, run
+from pra.tools.search import SearchError, TavilySearch
 
 app = typer.Typer(add_completion=False)
 
 
 @app.command()
-def main(question: str) -> None:
-    """Research QUESTION and print a cited report."""
+def main(
+    question: str,
+    depth: str = typer.Option("standard", help="quick, standard or deep"),
+    out_dir: Path = typer.Option(Path("reports"), help="where reports are saved"),
+) -> None:
+    """Research QUESTION and save a cited Markdown report."""
     load_dotenv()
-    typer.echo(run(question))
+    logging.basicConfig(level=logging.INFO, format="  %(message)s")
+    for noisy in ("httpx", "anthropic", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
+    if depth not in DEPTH:
+        raise typer.BadParameter(f"depth must be one of: {', '.join(DEPTH)}")
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        typer.echo("ANTHROPIC_API_KEY is not set. Add it to .env")
+        raise typer.Exit(1)
+
+    try:
+        report = run(question, AnthropicClient(), TavilySearch(), depth)
+    except (SearchError, anthropic.APIError) as e:
+        typer.echo(f"Error: {e}")
+        raise typer.Exit(1)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    slug = re.sub(r"[^a-z0-9]+", "-", question.lower()).strip("-")[:40]
+    path = out_dir / f"{datetime.now():%Y%m%d-%H%M%S}-{slug}.md"
+    path.write_text(report, encoding="utf-8")
+
+    Console().print(Markdown(report))
+    typer.echo(f"\nSaved: {path}")
 
 
 if __name__ == "__main__":

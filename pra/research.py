@@ -100,3 +100,36 @@ def research(sub_question: str, llm: LLMClient, search: SearchProvider,
 
         if status is not None:
             return status
+
+def text(t):
+    return LLMResponse(content=[{"type": "text", "text": t}], text=t, tokens=10)
+
+
+def test_full_run_produces_cited_report(monkeypatch):
+    monkeypatch.setattr(research_mod, "fetch_page", fake_fetch)
+    llm = FakeLLM([
+        text('["What is RAG?"]'),
+        call("1", "web_search", query="what is rag"),
+        call("2", "fetch_page", url="https://a.com"),
+        call("3", "save_note", url="https://a.com",
+             facts="RAG retrieves documents first.",
+             evidence="retrieves documents first"),
+        call("4", "finish_research", status="enough"),
+        text("# RAG\n\nRAG retrieves documents before answering [1]."),
+    ])
+    report = run("What is RAG?", llm, FakeSearch(), depth="quick")
+    assert "[1]" in report
+    assert "## Sources" in report
+    assert "https://a.com" in report
+    assert "Partial report" not in report
+
+
+def test_no_notes_gives_no_evidence_message():
+    llm = FakeLLM([text('["q1"]'), call("1", "finish_research", status="nothing found")])
+    report = run("Obscure question", llm, FakeSearch(), depth="quick")
+    assert "No usable evidence" in report
+
+
+def test_plan_parsing():
+    assert _parse("not json", "my question", 4) == ["my question"]
+    assert _parse('Here: ["a", "b", "c"] done', "q", 2) == ["a", "b"]

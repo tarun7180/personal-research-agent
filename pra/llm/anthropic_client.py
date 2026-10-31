@@ -8,7 +8,7 @@ from pra.llm.base import LLMResponse
 
 
 class AnthropicClient:
-    def __init__(self, model: str | None = None, max_tokens: int = 2048,
+    def __init__(self, model: str | None = None, max_tokens: int = 4096,
                  client: anthropic.Anthropic | None = None):
         self.model = model or os.getenv("PRA_MODEL", "claude-sonnet-5-5")
         self.max_tokens = max_tokens
