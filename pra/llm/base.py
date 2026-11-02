@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Protocol
 
+class LLMError(Exception):
+    pass
 
 @dataclass
 class LLMResponse:

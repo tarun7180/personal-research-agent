@@ -13,10 +13,19 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 from pra.llm.anthropic_client import AnthropicClient
+from pra.llm.base import LLMClient, LLMError
+from pra.llm.openai_compat import OpenAICompatClient
 from pra.orchestrator import DEPTH, run
 from pra.tools.search import SearchError, TavilySearch
 
 app = typer.Typer(add_completion=False)
+
+
+def make_llm() -> LLMClient:
+    """Anthropic if its key is set; otherwise any OpenAI-compatible API from LLM_* settings."""
+    if os.getenv("LLM_PROVIDER", "").lower() == "openai" or not os.getenv("ANTHROPIC_API_KEY"):
+        return OpenAICompatClient()
+    return AnthropicClient()
 
 
 @app.command()
@@ -33,13 +42,10 @@ def main(
 
     if depth not in DEPTH:
         raise typer.BadParameter(f"depth must be one of: {', '.join(DEPTH)}")
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        typer.echo("ANTHROPIC_API_KEY is not set. Add it to .env")
-        raise typer.Exit(1)
 
     try:
-        report = run(question, AnthropicClient(), TavilySearch(), depth)
-    except (SearchError, anthropic.APIError) as e:
+        report = run(question, make_llm(), TavilySearch(), depth)
+    except (SearchError, LLMError, anthropic.APIError) as e:
         typer.echo(f"Error: {e}")
         raise typer.Exit(1)
 
