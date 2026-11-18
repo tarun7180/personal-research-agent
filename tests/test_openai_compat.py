@@ -58,3 +58,30 @@ def test_missing_model_raises(monkeypatch):
     monkeypatch.delenv("LLM_MODEL", raising=False)
     with pytest.raises(LLMError):
         OpenAICompatClient()
+
+def test_gemini_thought_signature_is_sent_back():
+    seen = []
+
+    def handler(request):
+        seen.append(json.loads(request.content))
+        if len(seen) == 1:
+            return httpx.Response(200, json={"choices": [{"message": {
+                "content": None,
+                "tool_calls": [{"id": "c1", "type": "function",
+                                "function": {"name": "web_search", "arguments": "{}"},
+                                "extra_content": {"google": {"thought_signature": "sig123"}}}]}}]})
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    client = OpenAICompatClient(
+        base_url="http://x/v1", model="m",
+        client=httpx.Client(transport=httpx.MockTransport(handler)))
+    first = client.complete("s", [{"role": "user", "content": "q"}])
+    messages = [
+        {"role": "user", "content": "q"},
+        {"role": "assistant", "content": first.content},
+        {"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": "c1", "content": "r"}]},
+    ]
+    client.complete("s", messages)
+    sent = seen[1]["messages"][2]["tool_calls"][0]
+    assert sent["extra_content"]["google"]["thought_signature"] == "sig123"

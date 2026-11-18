@@ -18,9 +18,15 @@ def _convert(system: str, messages: list[dict]) -> list[dict]:
             out.append({"role": m["role"], "content": content})
         elif m["role"] == "assistant":
             text = "".join(b["text"] for b in content if b["type"] == "text")
-            calls = [{"id": b["id"], "type": "function",
-                      "function": {"name": b["name"], "arguments": json.dumps(b["input"])}}
-                     for b in content if b["type"] == "tool_use"]
+            calls = []
+            for b in content:
+                if b["type"] != "tool_use":
+                    continue
+                call = {"id": b["id"], "type": "function",
+                        "function": {"name": b["name"], "arguments": json.dumps(b["input"])}}
+                if b.get("extra_content"):        # Gemini thought signature: send back unchanged
+                    call["extra_content"] = b["extra_content"]
+                calls.append(call)
             msg = {"role": "assistant", "content": text or None}
             if calls:
                 msg["tool_calls"] = calls
@@ -46,8 +52,9 @@ class OpenAICompatClient:
         if not self.model:
             raise LLMError("LLM_MODEL is not set (see .env)")
         self.max_tokens = max_tokens
-        self.retry_waits = (5, 15, 30)   # seconds to wait after a 429 or 5xx
-        self._client = client or httpx.Client(timeout=timeout)
+        self.retry_waits = (5, 15, 30, 60, 90)   # seconds to wait after a 429 or 5xx
+        self._client = client or httpx.Client(
+            timeout=timeout or float(os.getenv("LLM_TIMEOUT", "120")))
 
     def complete(self, system, messages, tools=None) -> LLMResponse:
         body = {"model": self.model, "max_tokens": self.max_tokens,
@@ -72,7 +79,7 @@ class OpenAICompatClient:
                 continue
             break
         if resp.status_code != 200:
-            raise LLMError(f"model request failed: HTTP {resp.status_code}")
+            raise LLMError(f"model request failed: HTTP {resp.status_code} {resp.text[:200]}")
 
         try:
             data = resp.json()
@@ -92,7 +99,10 @@ class OpenAICompatClient:
             call = {"id": tc.get("id") or f"call_{len(calls)}",
                     "name": tc["function"]["name"], "input": args}
             calls.append(call)
-            content.append({"type": "tool_use", **call})
+            block = {"type": "tool_use", **call}
+            if tc.get("extra_content"):           # keep Gemini's thought signature
+                block["extra_content"] = tc["extra_content"]
+            content.append(block)
 
         usage = data.get("usage") or {}
         return LLMResponse(
