@@ -8,7 +8,8 @@ from pra.planner import plan
 from pra.research import research
 from pra.tools.notes import NoteBook
 from pra.tools.search import SearchProvider
-from pra.writer import write_report
+from pra.verify import verify_report
+from pra.writer import sources_section, write_report
 
 log = logging.getLogger("pra")
 
@@ -51,7 +52,10 @@ def run(question: str, llm: LLMClient, search: SearchProvider,
                 f"written.\n\nProblems: {'; '.join(problems) or 'none recorded'}\n")
 
     log.info("Writing report from %d notes", len(notebook.notes))
-    report = write_report(question, notebook, llm, budget)
+    body = write_report(question, notebook, llm, budget)
+    log.info("Verifying claims")
+    body, summary = verify_report(body, notebook, llm, budget)
+    report = body.strip() + "\n\n" + sources_section(notebook) + "\n\n" + summary + "\n"
     if problems:
         report = "> **Partial report:** " + "; ".join(problems) + "\n\n" + report
     return report

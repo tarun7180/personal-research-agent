@@ -23,3 +23,11 @@ class NoteBook:
             raise ValueError("evidence must be a quote under 25 words")
         self.notes.append(Note(source_url=url, facts=facts.strip(),
                                evidence=evidence.strip()))
+
+    def source_urls(self) -> list[str]:
+        """Source URLs in order of first note. Position + 1 is the citation number."""
+        urls: list[str] = []
+        for n in self.notes:
+            if n.source_url not in urls:
+                urls.append(n.source_url)
+        return urls
