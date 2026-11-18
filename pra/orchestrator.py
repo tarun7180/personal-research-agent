@@ -13,9 +13,9 @@ from pra.writer import write_report
 log = logging.getLogger("pra")
 
 DEPTH = {
-    "quick":    dict(subqs=3, max_sources=3, steps=20, tokens=200_000, seconds=300),
-    "standard": dict(subqs=4, max_sources=5, steps=40, tokens=400_000, seconds=600),
-    "deep":     dict(subqs=6, max_sources=6, steps=70, tokens=800_000, seconds=900),
+    "quick":    dict(subqs=3, max_sources=3, sub_steps=8,  steps=30, tokens=400_000,   seconds=900),
+    "standard": dict(subqs=4, max_sources=5, sub_steps=10, steps=48, tokens=800_000,   seconds=1200),
+    "deep":     dict(subqs=6, max_sources=6, sub_steps=12, steps=80, tokens=1_500_000, seconds=1800),
 }
 
 
@@ -41,6 +41,7 @@ def run(question: str, llm: LLMClient, search: SearchProvider,
             f"{sub}\n(Overall question: {question})",
             llm, search, notebook, budget,
             max_sources=len(notebook.sources) + cfg["max_sources"],
+            max_steps=cfg["sub_steps"],
         )
         if status.startswith(("stopped", "ended")):
             problems.append(f"sub-question {i} {status}")

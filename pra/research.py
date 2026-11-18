@@ -71,10 +71,11 @@ def _run_tool(name: str, args: dict, search: SearchProvider,
 
 
 def research(sub_question: str, llm: LLMClient, search: SearchProvider,
-             notebook: NoteBook, budget: Budget, max_sources: int = 6) -> str:
+             notebook: NoteBook, budget: Budget, max_sources: int = 6,
+             max_steps: int = 8) -> str:
     """Run the tool loop for one sub-question. Returns a one-line status."""
     messages = [{"role": "user", "content": f"Sub-question: {sub_question}"}]
-    while True:
+    for _ in range(max_steps):
         try:
             resp = llm.complete(SYSTEM, messages, tools=TOOLS)
             budget.charge(resp.tokens)
@@ -100,6 +101,7 @@ def research(sub_question: str, llm: LLMClient, search: SearchProvider,
 
         if status is not None:
             return status
+    return "reached its step cap"    
 
 def text(t):
     return LLMResponse(content=[{"type": "text", "text": t}], text=t, tokens=10)

@@ -76,3 +76,11 @@ def test_long_evidence_rejected():
     nb.add_source(Page(url="https://a.com", text="x"))
     with pytest.raises(ValueError):
         nb.save_note("https://a.com", "fact", " ".join(["w"] * 26))
+
+def test_sub_question_step_cap():
+    llm = FakeLLM([call("1", "web_search", query="a"),
+                   call("2", "web_search", query="b"),
+                   call("3", "web_search", query="c")])
+    status = research("q", llm, FakeSearch(), NoteBook(), Budget(), max_steps=2)
+    assert status == "reached its step cap"
+    assert len(llm.script) == 1      # the third call was never made
