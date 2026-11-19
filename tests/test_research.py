@@ -165,3 +165,9 @@ def test_verifier_counts_uncited_sentences():
     llm = FakeLLM([text('[{"id":1,"verdict":"supported","reason":"ok"}]')])
     out, summary = verify_report(body, nb, llm, Budget())
     assert "without a citation, which are not checked: 1" in summary
+
+def test_note_rejected_if_quote_not_in_page():
+    nb = NoteBook()
+    nb.add_source(Page(url="https://a.com", text="alpha beta gamma"))
+    with pytest.raises(ValueError):
+        nb.save_note("https://a.com", "fact", "something else entirely")

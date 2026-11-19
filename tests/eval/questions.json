@@ -1,0 +1,22 @@
+[
+  {"id": "q01", "type": "ai", "question": "How does retrieval-augmented generation differ from fine-tuning?"},
+  {"id": "q02", "type": "cs", "question": "What is the difference between a process and a thread in operating systems?"},
+  {"id": "q03", "type": "security", "question": "How does HTTPS protect data in transit?"},
+  {"id": "q04", "type": "databases", "question": "What are the main differences between SQL and NoSQL databases?"},
+  {"id": "q05", "type": "ai", "question": "How do vector databases work and when are they used?"},
+  {"id": "q06", "type": "cs", "question": "What is the CAP theorem and what does it mean for distributed systems?"},
+  {"id": "q07", "type": "python", "question": "How does the Python GIL affect multithreaded programs?"},
+  {"id": "q08", "type": "architecture", "question": "What are the benefits and risks of microservices compared to a monolith?"},
+  {"id": "q09", "type": "security", "question": "How does the OAuth 2.0 authorization code flow work?"},
+  {"id": "q10", "type": "ai", "question": "What causes prompt injection in LLM applications and how can it be mitigated?"},
+  {"id": "q11", "type": "ai", "question": "What is the difference between supervised, unsupervised and reinforcement learning?"},
+  {"id": "q12", "type": "cs", "question": "How does garbage collection work in Java?"},
+  {"id": "q13", "type": "general", "question": "What are the main causes of inflation according to economists?"},
+  {"id": "q14", "type": "general", "question": "How do mRNA vaccines work?"},
+  {"id": "q15", "type": "devops", "question": "What is the difference between Docker containers and virtual machines?"},
+  {"id": "q16", "type": "ai", "question": "How does the transformer attention mechanism work?"},
+  {"id": "q17", "type": "databases", "question": "What are common database indexing strategies and their trade-offs?"},
+  {"id": "q18", "type": "security", "question": "How do public-key cryptography and digital signatures work?"},
+  {"id": "q19", "type": "general", "question": "What are the pros and cons of remote work for software teams?"},
+  {"id": "q20", "type": "unanswerable", "question": "What did the 2031 Mars colony water-rights treaty establish?"}
+]

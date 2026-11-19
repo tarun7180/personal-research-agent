@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from pra.models import Note, Page
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"[\W_]+", " ", s.lower()).strip()
 
 
 @dataclass
@@ -21,6 +26,8 @@ class NoteBook:
             raise ValueError("facts is empty")
         if len(evidence.split()) >= 25:
             raise ValueError("evidence must be a quote under 25 words")
+        if not evidence.strip() or _norm(evidence) not in _norm(self.sources[url].text):
+            raise ValueError("evidence must be copied word for word from the page text")
         self.notes.append(Note(source_url=url, facts=facts.strip(),
                                evidence=evidence.strip()))
 
