@@ -31,6 +31,7 @@ def run(question: str, llm: LLMClient, search: SearchProvider,
     log.info("Plan: %s", subs)
 
     problems: list[str] = []
+    statuses: list[str] = []
     for i, sub in enumerate(subs, 1):
         try:
             budget.check()
@@ -44,12 +45,17 @@ def run(question: str, llm: LLMClient, search: SearchProvider,
             max_sources=len(notebook.sources) + cfg["max_sources"],
             max_steps=cfg["sub_steps"],
         )
+        statuses.append(f"- {sub} ({status})")
         if status.startswith(("stopped", "ended")):
             problems.append(f"sub-question {i} {status}")
 
     if not notebook.notes:
-        return (f"# {question}\n\nNo usable evidence was found, so no report was "
-                f"written.\n\nProblems: {'; '.join(problems) or 'none recorded'}\n")
+        tried = "\n".join(statuses) or "- none"
+        return (f"# {question}\n\n"
+                "No usable evidence was found, so no report was written. "
+                "The question may rely on something that does not exist or is not documented online.\n\n"
+                f"## What was tried\n\n{tried}\n\n"
+                f"Problems: {'; '.join(problems) or 'none recorded'}\n")
 
     log.info("Writing report from %d notes", len(notebook.notes))
     body = write_report(question, notebook, llm, budget)

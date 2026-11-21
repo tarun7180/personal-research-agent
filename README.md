@@ -109,7 +109,7 @@ I wrote 20 questions (`tests/eval/questions.json`): 19 factual questions across 
 
 | Check | Result |
 |---|---|
-| Questions answered (quick depth) | _fill in: n of 19_ |
+| Questions answered (quick depth) | 19 of 19_ |
 | Claims judged by the agent's own verifier | 96% supported (145 claims) |
 | Quotes found word for word in source pages | 81 of 81 |
 | Sentences without a citation (average per report) | 0.6 |
