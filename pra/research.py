@@ -12,7 +12,7 @@ from pra.tools.search import SearchError, SearchProvider, web_search
 log = logging.getLogger("pra")
 
 SYSTEM = (Path(__file__).parent / "prompts" / "researcher.md").read_text(encoding="utf-8")
-MAX_PAGE_CHARS = 8_000   # text of one page shown to the model
+MAX_PAGE_CHARS = 5_000   # text of one page shown to the model
 
 TOOLS = [
     {"name": "web_search",

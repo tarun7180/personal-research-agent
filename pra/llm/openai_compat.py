@@ -72,14 +72,22 @@ class OpenAICompatClient:
                 resp = self._client.post(
                     f"{self.base_url}/chat/completions", json=body,
                     headers={"Authorization": f"Bearer {self.api_key}"})
+            except httpx.TransportError as e:   # dropped connection, timeout, etc.
+                if attempt < 2:                 # two quick retries, then give up
+                    time.sleep(self.retry_waits[attempt])
+                    continue
+                raise LLMError(f"model request failed: {type(e).__name__}") from e
             except httpx.HTTPError as e:
                 raise LLMError(f"model request failed: {type(e).__name__}") from e
+            if resp.status_code == 429 and "PerDay" in resp.text:
+                raise LLMError("daily free quota used up, try again after it resets: "
+                               + resp.text[:1500])
             if resp.status_code in (429, 500, 502, 503) and attempt < len(self.retry_waits):
                 time.sleep(self.retry_waits[attempt])
                 continue
             break
         if resp.status_code != 200:
-            raise LLMError(f"model request failed: HTTP {resp.status_code} {resp.text[:200]}")
+            raise LLMError(f"model request failed: HTTP {resp.status_code} {resp.text[:1500]}")
 
         try:
             data = resp.json()
